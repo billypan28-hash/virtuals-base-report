@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base 链生态、Virtuals 协议机制与 $VIRTUAL 经济飞轮深度调研报告</title>
+  <!-- Tailwind CSS via Google gstatic CDN -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    :root {
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+    }
+    
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .glass-panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glow-blue {
+      box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.3);
+    }
+
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+    }
+
+    .glow-rose {
+      box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.3);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .active-nav {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.1));
+      border-color: #3b82f6 !important;
+      color: #60a5fa !important;
+    }
+
+    .pulse-dot {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.15); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- TOP HEADER & STATUS BAR -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 bg-slate-950/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            Base 链生态 &amp; Virtuals Protocol 研报
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">深度研判看板</span>
+          </h1>
+          <p class="text-xs text-slate-400">链上数据监测 / 协议机制穿透 / 代币经济学终局分析</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 text-xs">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          Base TVS: $14.74B (#1 L2)
+        </span>
+        <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
+          $VIRTUAL 供量: 10亿固定
+        </span>
+        <button onclick="scrollToSection('calculator')" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition shadow-sm">
+          ⚡ 飞轮锁仓模拟器
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- QUICK STATS TICKER -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2 w-full">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">Base L2 排名</div>
+        <div class="text-lg font-bold text-emerald-400 mt-1 flex items-baseline gap-1.5">
+          第 1 名
+          <span class="text-[10px] text-slate-400 font-normal">超 Arbitrum</span>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-0.5">L2BEAT TVS: $14.74B</div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">Base 稳定币存量</div>
+        <div class="text-lg font-bold text-white mt-1">$5.03B</div>
+        <div class="text-[10px] text-blue-400 mt-0.5">原生合规 USDC 占比近40%</div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">Virtuals 毕业硬锁</div>
+        <div class="text-lg font-bold text-indigo-400 mt-1">42,000 $V</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">单个 Agent 必须锁 10 年</div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">$VIRTUAL 母币增发</div>
+        <div class="text-lg font-bold text-emerald-400 mt-1">0%</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">10亿固定总量 / 无VC悬刃</div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">$GAME 最大回撤</div>
+        <div class="text-lg font-bold text-rose-400 mt-1">-98.7%</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">ATH $0.392 → 现约 $0.0048</div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-xl border border-slate-800">
+        <div class="text-[11px] text-slate-400 font-medium">Eastworld 机器人机队</div>
+        <div class="text-lg font-bold text-amber-400 mt-1">30+ 台</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">宇树 G1 + 50万条任务演示</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN NAVIGATION TABS -->
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-slate-800/80 text-sm no-scrollbar">
+      <button onclick="switchTab('tab-base')" id="btn-tab-base" class="tab-btn px-4 py-2.5 rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap active-nav border border-transparent">
+        <span>🌐 1. Base 链凉了吗？</span>
+      </button>
+      <button onclick="switchTab('tab-boost')" id="btn-tab-boost" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap border border-transparent hover:bg-slate-900/60">
+        <span>⚡ 2. /boost 深度解构</span>
+      </button>
+      <button onclick="switchTab('tab-virtuals-issue')" id="btn-tab-virtuals-issue" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap border border-transparent hover:bg-slate-900/60">
+        <span>🛡️ 3. 为什么不发 Base 币了？</span>
+      </button>
+      <button onclick="switchTab('tab-pathdao-eastworld')" id="btn-tab-pathdao-eastworld" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap border border-transparent hover:bg-slate-900/60">
+        <span>🤖 4. PathDAO 与 Eastworld 机器人</span>
+      </button>
+      <button onclick="switchTab('tab-flywheel-buyback')" id="btn-tab-flywheel-buyback" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap border border-transparent hover:bg-slate-900/60">
+        <span>🔄 5. $V 飞轮与回购销毁真相</span>
+      </button>
+      <button onclick="switchTab('tab-game-decision')" id="btn-tab-game-decision" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap border border-transparent hover:bg-slate-900/60">
+        <span>🎯 6. $GAME 前景与决策树</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN TAB CONTENTS CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+    <!-- ==================== TAB 1: BASE 链现状 ==================== -->
+    <div id="tab-base" class="tab-content space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold mb-2">
+              宏观霸主 vs 微观散户体感
+            </div>
+            <h2 class="text-2xl font-bold text-white tracking-tight">Base 链现在凉了吗？——“金融高速公路”的认知差</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              研判结论：宏观绝对未凉 / 投机生态降温
+            </span>
+          </div>
+        </div>
+
+        <!-- 两个核心维度的强烈对比 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <!-- 宏观链上事实 -->
+          <div class="p-5 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  【客观数据】全网 L2 绝对霸主
+                </span>
+                <span class="text-xs text-slate-500 font-mono">DefiLlama / L2BEAT</span>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-start gap-2.5">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>L2BEAT 总安全价值 (TVS) 达 $14.74B</strong>：独占所有以太坊 Layer-2 <strong>第 1 名</strong>，显著领先 Arbitrum One（$10.99B）近 35 亿美元。</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>DeFi TVL 达 $5.57B / 跨链沉淀 $19.12B</strong>：资金基础极度雄厚，原生合规 USDC 市值超 $5.03B，占以太坊 L2 稳定币近 40% 份额。</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>Coinbase 原生护城河</strong>：Coinbase Smart Wallet 无私钥钱包一键打通数十亿法币资金入金，cbBTC 规模稳步超越多数第三方封装资产。</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <span class="text-emerald-400 font-bold">✓</span>
+                  <span><strong>真实消费结算落地</strong>：Stripe 旗下 Bridge 与 Shopify 原生接入 Base 链 USDC 支付，成为全球消费支付量最大的 L2。</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              📌 <strong class="text-slate-200">商业本质：</strong>Base 已经从前期的投机试验场，演进为背靠 Coinbase 的万亿级合规金融清算基础设施。
+            </div>
+          </div>
+
+          <!-- 为什么散户体感凉了 -->
+          <div class="p-5 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-bold text-rose-400 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                  【散户体感】投机热钱与 PVP 赚钱效应消退
+                </span>
+                <span class="text-xs text-slate-500 font-mono">Degen 视角</span>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex items-start gap-2.5">
+                  <span class="text-rose-400 font-bold">✗</span>
+                  <span><strong>Solana Pump.fun 虹吸 80%+ 土狗流量</strong>：极端极速、单链高 TPS 与低摩擦让投机游资全面回流 Solana，Base 的 Meme 炒作降温。</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <span class="text-rose-400 font-bold">✗</span>
+                  <span><strong>AI Agent 与 Farcaster 社交泡沫破裂</strong>：2024 年底由 Clanker、$ANON、Virtuals 掀起的套壳发币狂欢后，95% 代币归零，二级套牢盘沉重。</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <span class="text-rose-400 font-bold">✗</span>
+                  <span><strong>官方战略重心不向 Degen 倾斜</strong>：Jesse Pollak 与 Coinbase 的目标是“Bring 1 Billion People Onchain”，发力合规支付与 RWA，对割韭菜盘采取冷处理。</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              ⚠️ <strong class="text-slate-200">散户逻辑：</strong>“没有暴富神话和接盘侠，就算 TVL 再高也是凉了”。认知差造就了巨大的体感反差。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: /BOOST 深度解构 ==================== -->
+    <div id="tab-boost" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="border-b border-slate-800 pb-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold mb-2">
+            场景穿透
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">/boost 究竟指什么？——全生态五大高频场景全解析</h2>
+          <p class="text-sm text-slate-400 mt-1">在 Base 链交互和 Virtuals 生态中，`/boost` 存在五个完全不同的应用场景：</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
+          <!-- 场景 1 -->
+          <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-blue-500/40 transition">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-sm mb-3">01</div>
+            <h3 class="text-base font-bold text-white">TG 交易 Bot 优先 Gas 加速指令</h3>
+            <p class="text-xs text-blue-400 mt-1 font-mono">Maestro / PepeBoost / Banana Gun</p>
+            <p class="text-sm text-slate-300 mt-2.5 leading-relaxed">
+              在 Base 链或 EVM 链抢土狗挂起（Pending）时，输入 <code class="text-amber-300 bg-amber-500/10 px-1 py-0.5 rounded">/boost</code> 可以<strong>紧急调高交易的 Priority Fee（优先 Gas 贿赂费）</strong>，避免因网络拥堵卡单或被夹子（MEV）截杀。
+            </p>
+            <span class="inline-block mt-3 px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-400">散户交易最高频使用</span>
+          </div>
+
+          <!-- 场景 2 -->
+          <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-sm mb-3">02</div>
+            <h3 class="text-base font-bold text-white">DexScreener 代币打榜机制</h3>
+            <p class="text-xs text-emerald-400 mt-1 font-mono">DexScreener Trending Boost</p>
+            <p class="text-sm text-slate-300 mt-2.5 leading-relaxed">
+              项目方或社区付费为代币购买 Boosts。Boost 点数越多的代币，在 DexScreener Trending 热门榜上的排名权重越高，是 Base 链代币吸引外部注意力的核心买量方式。
+            </p>
+            <span class="inline-block mt-3 px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-400">项目方买量营销</span>
+          </div>
+
+          <!-- 场景 3 -->
+          <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition">
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm mb-3">03</div>
+            <h3 class="text-base font-bold text-white">Virtuals 官方新机制“Hyperboost”</h3>
+            <p class="text-xs text-indigo-400 mt-1 font-mono">2026年7月上线协议机制</p>
+            <p class="text-sm text-slate-300 mt-2.5 leading-relaxed">
+              专门解决 AI Agent 代币在联合曲线“毕业第一天暴跌（Day-One Dropout）”的问题。将未使用的供应量转化为长达 14 天的每日奖励池，为毕业代币强制“续命与提供二次流动性”。
+            </p>
+            <span class="inline-block mt-3 px-2 py-1 rounded bg-indigo-500/10 text-indigo-300 text-[11px]">Virtuals 核心治理更新</span>
+          </div>
+
+          <!-- 场景 4 -->
+          <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 transition">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-sm mb-3">04</div>
+            <h3 class="text-base font-bold text-white">Virtuals ACP: ClawBoost 与 Mutual Boost</h3>
+            <p class="text-xs text-purple-400 mt-1 font-mono">自主商业协议自动化交互</p>
+            <p class="text-sm text-slate-300 mt-2.5 leading-relaxed">
+              项目方出资，由平台雇佣买方 Agent 自动在链上下单交互，或多个 Agent 建立互雇结算机制，以此刷高智能体的活跃度与链上交易量（aGDP）。
+            </p>
+            <span class="inline-block mt-3 px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-400">Agent 商业协议</span>
+          </div>
+
+          <!-- 场景 5 -->
+          <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-rose-500/40 transition col-span-1 md:col-span-2 lg:col-span-2">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold text-sm mb-3">05</div>
+            <h3 class="text-base font-bold text-white">Base 原生链上激励协议 Boost Protocol (boost.xyz)</h3>
+            <p class="text-xs text-rose-400 mt-1 font-mono">由 RabbitHole 团队开发</p>
+            <p class="text-sm text-slate-300 mt-2.5 leading-relaxed">
+              针对 Base 和 Farcaster 生态打造的链上交互奖励协议。开发者设立奖励金库，用户完成 Base 链上的特定交互（如 Swap、Mint NFT、Cast 交互等），由合约自动判定并发放代币奖金。
+            </p>
+            <span class="inline-block mt-3 px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-400">Base/Farcaster 原生空投协议</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: VIRTUALS 发币机制与去土狗化 ==================== -->
+    <div id="tab-virtuals-issue" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="border-b border-slate-800 pb-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-semibold mb-2">
+            规则重构真相
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Virtuals.io 为什么“不发 Base 币了”？</h2>
+          <p class="text-sm text-slate-400 mt-1">既包含基础认知的澄清，也是平台主动斩断“无脑发土狗”通道带来的直观体感变化：</p>
+        </div>
+
+        <div class="space-y-6 mt-6">
+          <!-- 概念澄清 -->
+          <div class="p-5 rounded-xl bg-blue-950/20 border border-blue-900/40">
+            <h3 class="text-base font-bold text-blue-400 flex items-center gap-2">
+              <span>💡</span> 基础常识澄清：Base 本身没有原生代币
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm text-slate-300">
+              <p>① <strong>Base 链没有 $BASE 币</strong>：Coinbase 官方多次声明 Base 不发币，网络 Gas 直接结算 ETH。很多散户误以为平台不发“Base 的公链币”。</p>
+              <p>② <strong>Virtuals 必须与 $VIRTUAL 配对</strong>：Virtuals 并非用 ETH 发币的 Pump.fun，平台所有子代币都强制与母币 $VIRTUAL 配对，联合曲线必须买满 42,000 $VIRTUAL 才能毕业。</p>
+            </div>
+          </div>
+
+          <!-- 核心三大改革 -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- 改革 1 -->
+            <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div class="text-rose-400 text-lg font-bold mb-2">① “60 Days” 可逆清盘框架</div>
+              <p class="text-xs text-slate-400 font-semibold mb-3">彻底终结“发了就跑”的 Rug Pull</p>
+              <p class="text-sm text-slate-300 leading-relaxed">
+                新代币上线后进入 60 天沙盒期。如果创始人未能兑现路线图或放弃项目，<strong>智能合约触发全额退款清盘机制——抽回流动性并将资金 100% 原路退还给代币持有者</strong>！这直接消灭了短期套现的野鸡团队。
+              </p>
+            </div>
+
+            <!-- 改革 2 -->
+            <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div class="text-indigo-400 text-lg font-bold mb-2">② “Genesis” 严格准入体系</div>
+              <p class="text-xs text-slate-400 font-semibold mb-3">质押 Virgen 积分与反夹子机制</p>
+              <p class="text-sm text-slate-300 leading-relaxed">
+                全面废除无许可无门槛发币。发币方必须持有并质押生态积分 Virgen Points，且引入分层质押、购买冷静期与 Anti-Whale 巨鲸认购限额，严厉打击链上脚本秒抢与短线倾销。
+              </p>
+            </div>
+
+            <!-- 改革 3 -->
+            <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div class="text-emerald-400 text-lg font-bold mb-2">③ 多链生态分流至 Solana</div>
+              <p class="text-xs text-slate-400 font-semibold mb-3">2026年8月打通 Solana 主网</p>
+              <p class="text-sm text-slate-300 leading-relaxed">
+                Virtuals 正式打通 Solana 创建与交易。高频博弈的短线资金部分转向 Solana，使只盯着 Base 链内盘的用户感觉“Base 上没人发币了”。但实际上，<strong>Base 依然是 Virtuals 的治理大本营与国库中枢</strong>。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: PATHDAO 与 EASTWORLD 机器人 ==================== -->
+    <div id="tab-pathdao-eastworld" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="border-b border-slate-800 pb-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold mb-2">
+            团队演化与硬科技前沿
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">PathDAO 打金公会历史与 Eastworld 具身智能现状</h2>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <!-- PathDAO 历史 -->
+          <div class="p-6 rounded-xl bg-slate-900/70 border border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span class="text-amber-400">⚔️</span> 前身：打金公会 PathDAO 的基因烙印
+              </h3>
+              <span class="text-xs text-slate-500 font-mono">2021~2024 演进史</span>
+            </div>
+            
+            <div class="space-y-4 text-sm text-slate-300">
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">1. BCG 咨询精英入局 GameFi (2021)</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  创始人 Jansen Teng 与 Wee Kee Tiew 均出身波士顿咨询（BCG），获 DeFiance Capital、Merit Circle 500 万美元投资。当时通过批量采购 Axie NFT、雇佣东南亚打工者打游戏分润（30/70分成），发行 $PATH 代币。
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">2. 庞氏破灭与全面转型 (2023-2024)</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  Axie $SLP 暴跌 99% 后公会商业模式破产。团队顿悟：<strong>链上未来最具规模的劳动力不是打游戏的人类，而是能 7x24 小时产生价值的 AI Agent</strong>。2024 年将项目品牌重塑为 Virtuals，<strong>原 $PATH 代币 1:1 置换为生态母币 $VIRTUAL</strong>。
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">3. 公会经历带来的机制烙印</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  亲历过恶性通胀踩踏，团队在 Virtuals 中设计了<strong>最极端的流动性沉淀规则：10 亿固定总量绝不增发、必须锁 10 年 LP、严打游资套现</strong>。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Eastworld Labs 现状 -->
+          <div class="p-6 rounded-xl bg-slate-900/70 border border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span class="text-emerald-400">🤖</span> Eastworld Labs 实体机器人做得如何？
+              </h3>
+              <span class="text-xs text-emerald-400 font-mono">具身智能物理层</span>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-300">
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white flex items-center justify-between">
+                  <span>1. 30+ 台人形机器人机队</span>
+                  <span class="text-xs text-amber-400">宇树科技 Unitree G1</span>
+                </div>
+                <div class="text-xs text-slate-400 mt-1">
+                  Eastworld 致敬《西部世界》，打造去中心化具身智能物理层。已采购超 30 台全尺寸人形双足机器人，作为虚拟 Agent 落地物理世界的机体。
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">2. “SeeSaw” 遥操作与 50万+ 条任务演示数据</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  针对机器人最匮乏的物理交互数据，自主研发低延迟遥操作系统 SeeSaw，累计采集超 50 万条第一视角真实物理任务演示，专门用于微调 VLA 端到端具身模型。
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">3. 厄瓜多尔钦博拉索峰极限测试（还原真相）</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  将机器人“Pemba”运至海拔 6200 米雪山测试：<strong>坡度 &lt;30 度的平缓路段实现了自主运动控制；险峻陡峭路段完全由人类队员背负运输</strong>。属于极端耐受性验证与公关测试，尚不具备全地形自主攀登能力。
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-800/50 border border-slate-700/60">
+                <div class="font-semibold text-white">4. 现状客观评估：早期探索，商业化未大规模兑现</div>
+                <div class="text-xs text-slate-400 mt-1">
+                  入驻实验室需 Agent 市值连续 7 天稳定在 $5M 以上。项目在 Web3 属于极罕见自备硬件的先行者，但目前仍是研发与加速器形态，未产生大规模企业级合同收入（ARR）。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: 飞轮机制与回购销毁真相 ==================== -->
+    <div id="tab-flywheel-buyback" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="border-b border-slate-800 pb-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-semibold mb-2">
+            底层合约级拆解
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">$VIRTUAL 平台飞轮运作机制与“究竟有没有回购本币”</h2>
+        </div>
+
+        <!-- 飞轮运作四步法 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-blue-400 text-xs font-mono font-bold">STEP 01</div>
+            <div class="text-base font-bold text-white mt-1">100% 单一配对路由</div>
+            <p class="text-xs text-slate-400 mt-2">
+              所有 Agent 只能与 $VIRTUAL 配对建池。外部资金买入任何 Agent，底层合约必须一键在二级市场真金白银买入 $VIRTUAL，形成被动买盘支撑。
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-indigo-400 text-xs font-mono font-bold">STEP 02</div>
+            <div class="text-base font-bold text-white mt-1">毕业 42,000 $V 锁 10 年</div>
+            <p class="text-xs text-slate-400 mt-2">
+              联合曲线吸纳满 42,000 $VIRTUAL 毕业。合约将这部分母币与代币组成 LP，并强制锁定 10 年，相当于将母币流通盘永久抽离封印。
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-purple-400 text-xs font-mono font-bold">STEP 03</div>
+            <div class="text-base font-bold text-white mt-1">手续费与模块税流向</div>
+            <p class="text-xs text-slate-400 mt-2">
+              毕业前 1% 交易费 100% 入金库；毕业后 1% 交易税由 TaxManager 分润（30% 入金库）；Radar 曝光收 100 $V，ACF 资本形成收 10 $V。
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <div class="text-emerald-400 text-xs font-mono font-bold">STEP 04</div>
+            <div class="text-base font-bold text-white mt-1">ve 质押与 ACP 商业结算</div>
+            <p class="text-xs text-slate-400 mt-2">
+              质押锁仓最高 2 年享新币 5% 初始空投（金铲子）；未来 Agent 间互调 API 与服务，全部以 $VIRTUAL 作为原生计价与结算燃料。
+            </p>
+          </div>
+        </div>
+
+        <!-- 核心硬核真相：到底有没有回购 V 本币？ -->
+        <div class="mt-8 p-6 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-slate-900 border border-purple-800/50 glow-blue">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-lg">!</span>
+            <h3 class="text-xl font-bold text-white">硬核揭秘：究竟有没有回购 $VIRTUAL 本币？</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-300">
+            <div class="space-y-3">
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800">
+                <span class="text-amber-400 font-bold">实锤真相：官方回购销毁的是【子代币】，而非 $VIRTUAL 本币！</span>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                  2025 年 1 月，官方动用了协议手续费积累的 <strong>1,300 万枚 $VIRTUAL（当时市值约 4,800 万美元）</strong> 执行为期 30 天的 TWAP 回购。
+                  官方<strong>没有在二级市场买入母币销毁，而是用这 1300 万 $VIRTUAL 作为买盘资金，扫货回购了排名前 25 位的优质 AI Agent 子币（如 $GAME, $CONVO, $AIXBT 等），并把子币打入黑洞永久销毁</strong>！
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800">
+                <span class="text-blue-400 font-bold">为什么买子币销毁，而不直接烧母币？</span>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                  ① <strong>生态杠杆放大</strong>：直接烧母币只是缩减分母，对开发者无体感；用母币拉盘子币，能迅速改善子币流动性，激励真实开发者。<br>
+                  ② <strong>反向倒逼母币买盘</strong>：子币唯一的交易对就是 $VIRTUAL。官方拉升子币，外部追涨资金<strong>必须在二级市场真金白银买入 $VIRTUAL 才能入场</strong>，制造了远超单一销毁的外部净买盘。
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800">
+                <span class="text-rose-400 font-bold">DAO 治理真相：直接回购 $VIRTUAL 本币的提案被正式否决！</span>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                  散户持币者曾多次在 DAO 论坛提交提案，要求将协议收入直接用于二级市场回购注销 $VIRTUAL 本币。
+                  <strong>该提案最终被团队与大权重持有者多数票正式否决（Defeated）！</strong><br>
+                  核心共识是：金库内的 $VIRTUAL 是支撑 Eastworld 机器人研发、跨链与生态做市的战略弹药，绝不可作为一次性消耗品直接注销。
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col justify-center">
+                <span class="text-emerald-400 font-bold">一句话总结价值捕获模型</span>
+                <p class="text-xs text-slate-300 mt-2 font-mono">
+                  $VIRTUAL 依靠的是<strong>“单一路由强制买盘 + 10年锁仓流动性黑洞 + ve 锁仓分红”</strong>三大机制抽干流通盘，而非传统代币的回购销毁。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 交互式飞轮锁仓计算器 -->
+        <div id="calculator" class="mt-8 p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>🧮</span> 交互模拟器：Virtuals 毕业锁仓黑洞计算器
+              </h3>
+              <p class="text-xs text-slate-400">拖动滑块模拟不同 Agent 毕业规模下，二级市场被永久抽干的 $VIRTUAL 数量</p>
+            </div>
+            <div class="text-xs text-indigo-400 font-mono">每个 Agent 锁 42,000 $V (锁 10 年)</div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center gap-4">
+              <input type="range" id="agentSlider" min="50" max="5000" step="50" value="500" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" oninput="updateCalculator()">
+              <span id="agentCountDisplay" class="text-sm font-bold text-white px-3 py-1 bg-slate-800 rounded-lg min-w-[100px] text-center font-mono">500 个</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div class="text-xs text-slate-400">永久锁定 $VIRTUAL 数量</div>
+                <div id="lockedVirtualDisplay" class="text-xl font-bold text-indigo-400 mt-1 font-mono">21,000,000 V</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">强制注入 Uniswap LP 锁 10 年</div>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div class="text-xs text-slate-400">占总供应量比例 (总10亿)</div>
+                <div id="lockedPercentDisplay" class="text-xl font-bold text-emerald-400 mt-1 font-mono">2.10%</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">从二级市场物理抽干</div>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+                <div class="text-xs text-slate-400">假设 $V 单价 $1.5 时锁仓价值</div>
+                <div id="lockedValueDisplay" class="text-xl font-bold text-amber-400 mt-1 font-mono">$31,500,000</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">沉淀为无期限网络流动性底座</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 6: GAME 前景与决策树 ==================== -->
+    <div id="tab-game-decision" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800">
+        <div class="border-b border-slate-800 pb-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold mb-2">
+            终局研判与决策
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Virtuals 关联 Game 代币（$GAME）还有希望吗？</h2>
+          <p class="text-sm text-slate-400 mt-1">深度解构 $GAME 的链上惨状、被母币“架空吸血”的机制漏洞与最终投资决策树：</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <!-- 数据与机制架空 -->
+          <div class="space-y-4">
+            <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <h3 class="text-base font-bold text-rose-400 flex items-center justify-between">
+                <span>📉 惨烈的链上现实与合约数据</span>
+                <span class="text-xs text-slate-500">BaseScan</span>
+              </h3>
+              <div class="space-y-2 mt-3 text-sm text-slate-300">
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                  <span class="text-slate-400">官方合约地址:</span>
+                  <div class="flex items-center gap-1 font-mono text-xs text-indigo-400">
+                    <span>0x1c4c...63a3</span>
+                    <button onclick="copyToClipboard('0x1c4cca7c5db003824208adda61bd749e55f463a3')" class="hover:text-white" title="复制完整合约">📋</button>
+                  </div>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                  <span class="text-slate-400">历史最高价 (ATH):</span>
+                  <span class="font-mono text-white">$0.392 (2025-01-02)</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                  <span class="text-slate-400">当前价格水平:</span>
+                  <span class="font-mono text-rose-400">约 $0.0048</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-800">
+                  <span class="text-slate-400">距高点最大回撤:</span>
+                  <span class="font-mono text-rose-400 font-bold">-98.7%</span>
+                </div>
+                <div class="flex justify-between py-1">
+                  <span class="text-slate-400">全网日交易量:</span>
+                  <span class="font-mono text-slate-500">&lt; 数万美元（流动性枯竭）</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <h3 class="text-base font-bold text-amber-400">⚡ 为什么说 $GAME 几乎没有希望？底层逻辑</h3>
+              <ul class="space-y-2.5 mt-3 text-xs sm:text-sm text-slate-300">
+                <li>• <strong>经济模型“完全被吸血”</strong>：所有平台手续费、发币税、ACP 商业抽成 100% 回流 $VIRTUAL；$GAME 没有任何分红或销毁支持，是彻底架空的“次级壳代币”。</li>
+                <li>• <strong>团队战略转向具身智能与金融 RWA</strong>：核心精力已投向 Eastworld 实体机器人与 ACP 自主商业，纯链游在路线图中被无限期冷处理。</li>
+                <li>• <strong>极其沉重的历史套牢盘</strong>：上方 98% 筹码处于深度套牢状态，任何微小反弹都会遭遇老庄和散户的践踏式抛售。</li>
+                <li>• <strong>唯一的复活条件</strong>：官方发起提案将 $GAME 强制按比例置换合并进 $VIRTUAL，但目前团队毫无动作。</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 决策树 -->
+          <div class="p-6 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <h3 class="text-base font-bold text-white mb-3">🧭 终局投资决策导图</h3>
+              
+              <div class="space-y-3 text-xs sm:text-sm">
+                <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-900/50">
+                  <div class="font-bold text-emerald-400">若你看好 Base 链的未来：</div>
+                  <p class="text-slate-300 mt-1">
+                    重点关注 <strong>合规 USDC 支付通道、Aerodrome 流动性枢纽、cbBTC 与 Morpho 借贷</strong>，放弃在 Base 链追求暴利土狗的幻想。
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-blue-950/20 border border-blue-900/50">
+                  <div class="font-bold text-blue-400">若你看好 Virtuals 的 AI Agent 叙事：</div>
+                  <p class="text-slate-300 mt-1">
+                    <strong>唯一合理的价值载体是母币 $VIRTUAL</strong>。因为整个生态的所有现金流与流动性最终全部汇聚向它；不要随意抄底二级套壳子代币。
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-rose-950/20 border border-rose-900/50">
+                  <div class="font-bold text-rose-400">对待 $GAME 及同类链游子币：</div>
+                  <p class="text-slate-300 mt-1">
+                    <strong>坚决不碰，切勿抄底</strong>。在缺乏价值捕获和团队主动赋能的前提下，低价不是便宜，而是事实归零的进行时。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 合约速查 -->
+            <div class="mt-4 pt-3 border-t border-slate-800">
+              <div class="text-xs text-slate-400 font-semibold mb-2">核心合约速查 (Base 链)：</div>
+              <div class="space-y-1 text-[11px] font-mono">
+                <div class="flex justify-between items-center text-slate-300">
+                  <span>$VIRTUAL 母币:</span>
+                  <span class="text-blue-400">0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-300">
+                  <span>$GAME 子币:</span>
+                  <span class="text-rose-400">0x1c4cca7c5db003824208adda61bd749e55f463a3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2">
+      <p>Base &amp; Virtuals Protocol 深度调研分析系统 · 基于链上真实数据 (L2BEAT / DefiLlama / BaseScan) 与协议白皮书</p>
+      <p class="text-slate-600">本报告仅作为链上技术逻辑与代币经济学深度解构，不构成任何投资建议。</p>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT FOR INTERACTION -->
+  <script>
+    // Tab switching logic
+    function switchTab(tabId) {
+      // Hide all contents
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+      // Remove active class from all buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active-nav');
+        btn.classList.add('text-slate-400');
+      });
+
+      // Show targeted tab
+      const target = document.getElementById(tabId);
+      if (target) {
+        target.classList.remove('hidden');
+      }
+
+      // Highlight targeted button
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('active-nav');
+        activeBtn.classList.remove('text-slate-400');
+      }
+    }
+
+    // Calculator logic
+    function updateCalculator() {
+      const slider = document.getElementById('agentSlider');
+      const count = parseInt(slider.value, 10);
+      
+      document.getElementById('agentCountDisplay').innerText = count.toLocaleString() + ' 个';
+      
+      const lockedVirtual = count * 42000;
+      document.getElementById('lockedVirtualDisplay').innerText = lockedVirtual.toLocaleString() + ' V';
+      
+      // Total supply: 1,000,000,000
+      const percent = (lockedVirtual / 1000000000 * 100).toFixed(2);
+      document.getElementById('lockedPercentDisplay').innerText = percent + '%';
+      
+      const val = lockedVirtual * 1.5;
+      document.getElementById('lockedValueDisplay').innerText = '$' + val.toLocaleString();
+    }
+
+    // Scroll to section helper
+    function scrollToSection(id) {
+      switchTab('tab-flywheel-buyback');
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+
+    // Copy to clipboard helper
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已复制合约地址到剪贴板: ' + text);
+      }).catch(() => {
+        prompt('请手动复制地址:', text);
+      });
+    }
+
+    // Init calculator on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateCalculator();
+    });
+  </script>
+</body>
+</html>
